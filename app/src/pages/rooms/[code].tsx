@@ -16,7 +16,8 @@ export default function RoomPage() {
   const code = typeof router.query.code === "string" ? router.query.code.toUpperCase() : undefined;
   const { room, error, loading, reload } = useRoom(code);
   const { matches } = useLiveMatches(room?.competitionId ?? 72);
-  const { publicKey, signTransaction } = useWallet();
+  const wallet = useWallet();
+  const { publicKey, signTransaction } = wallet;
   const { connection } = useConnection();
 
   const me = publicKey?.toBase58();
@@ -83,8 +84,27 @@ export default function RoomPage() {
   async function finalize() {
     if (!code || !me) return;
     setBusy("final");
-    try { await post(`/api/rooms/${code}/finalize`, { hostWallet: me }); await reload(); }
-    catch (e: any) { setErr(e.message); } finally { setBusy(null); }
+    try {
+      const snapshot = standings.map((s) => ({ rank: s.rank, name: s.name, wallet: s.wallet, points: s.points, teams: s.teams }));
+      await post(`/api/rooms/${code}/finalize`, { hostWallet: me, standings: snapshot });
+      await reload();
+    } catch (e: any) { setErr(e.message); } finally { setBusy(null); }
+  }
+
+  async function mintBadge() {
+    if (!code || !me || !room || !wallet.publicKey) return;
+    setBusy("badge"); setErr(null);
+    try {
+      const { mintChampionBadge } = await import("@/lib/badge");
+      const { mint } = await mintChampionBadge({
+        endpoint: connection.rpcEndpoint,
+        wallet,
+        roomCode: room.code,
+        origin: window.location.origin,
+      });
+      await post(`/api/rooms/${code}/badge`, { mint });
+      await reload();
+    } catch (e: any) { setErr(e?.message || "mint failed"); } finally { setBusy(null); }
   }
 
   async function anchor() {
@@ -140,18 +160,40 @@ export default function RoomPage() {
       </div>
 
       {champion && (
-        <div className="card gold-glow mb-6 flex items-center gap-4 p-5">
-          <div className="text-4xl">🏆</div>
-          <div className="flex-1">
-            <div className="text-xs uppercase tracking-widest text-gold">Champion</div>
-            <div className="font-display text-2xl font-bold text-chalk">{champion.name}</div>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {champion.teams.map((t) => <TeamBadge key={t} team={t} className="chip px-2 py-0.5 text-xs" />)}
+        <div className="card gold-glow mb-6 p-5">
+          <div className="flex items-center gap-4">
+            <div className="text-4xl">🏆</div>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-widest text-gold">Champion</div>
+              <div className="font-display text-2xl font-bold text-chalk">{champion.name}</div>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {champion.teams.map((t) => <TeamBadge key={t} team={t} className="chip px-2 py-0.5 text-xs" />)}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="font-display text-3xl font-bold text-gold">{champion.points}</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted">points</div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="font-display text-3xl font-bold text-gold">{champion.points}</div>
-            <div className="text-[10px] uppercase tracking-wider text-muted">points</div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/10 pt-4">
+            {room.championBadgeMint ? (
+              <>
+                <span className="text-sm font-semibold text-gold">🎖 Champion Badge minted on-chain</span>
+                <a className="text-sm text-turf hover:underline" href={`https://explorer.solana.com/address/${room.championBadgeMint}?cluster=devnet`} target="_blank" rel="noreferrer">view NFT ↗</a>
+                <a className="text-sm text-muted hover:underline" href={`/api/badge/${room.code}/image`} target="_blank" rel="noreferrer">preview art</a>
+              </>
+            ) : isHost || (champion.wallet && champion.wallet === me) ? (
+              publicKey ? (
+                <button className="btn btn-primary" disabled={busy === "badge"} onClick={mintBadge}>
+                  {busy === "badge" ? "Minting…" : "🏆 Mint Champion Badge NFT"}
+                </button>
+              ) : (
+                <span className="text-sm text-muted">Connect the champion’s wallet to mint the badge.</span>
+              )
+            ) : (
+              <span className="text-sm text-muted">Only the champion can mint the badge.</span>
+            )}
           </div>
         </div>
       )}

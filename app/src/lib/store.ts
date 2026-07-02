@@ -33,6 +33,17 @@ export interface Room {
   draftSeed?: string;
   draftTx?: string;
   finalTx?: string;
+  finalizedAt?: number;
+  finalStandings?: FinalStanding[];
+  championBadgeMint?: string;
+}
+
+export interface FinalStanding {
+  rank: number;
+  name: string;
+  wallet?: string;
+  points: number;
+  teams: string[];
 }
 
 const TTL_SECONDS = 60 * 60 * 24 * 30; // rooms live 30 days

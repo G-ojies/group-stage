@@ -14,8 +14,14 @@ function Score({ m }: { m: MatchState }) {
 }
 
 function MatchCard({ m }: { m: MatchState }) {
+  const accent = m.inPlay
+    ? "linear-gradient(90deg,#3DFF7A,#22E3C3)"
+    : m.finished
+      ? "linear-gradient(90deg,#4C8DFF,#9B6BFF)"
+      : "linear-gradient(90deg,#9B6BFF,#FF5DA2)";
   return (
-    <div className={`card min-w-[240px] flex-1 p-3 ${m.inPlay ? "turf-glow" : ""}`}>
+    <div className={`card relative min-w-[240px] flex-1 overflow-hidden p-3 ${m.inPlay ? "turf-glow" : ""}`}>
+      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-[3px]" style={{ background: accent, opacity: m.inPlay ? 1 : 0.7 }} />
       <div className="mb-2 flex items-center justify-between">
         <PhasePill m={m} />
         {(m.homeTally.red > 0 || m.awayTally.red > 0) && (

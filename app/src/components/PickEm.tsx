@@ -86,9 +86,9 @@ export default function PickEm({ matches }: { matches: MatchState[] }) {
   };
 
   return (
-    <div className="card p-4">
+    <div className="card card-ring p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-display font-semibold text-chalk">Momentum</h3>
+        <h3 className="font-display font-semibold gradient-text">Momentum</h3>
         <div className="flex items-center gap-3 text-xs">
           <span className="text-turf">🔥 {state.streak} streak</span>
           <span className="text-muted">best {state.best}</span>

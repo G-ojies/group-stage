@@ -251,7 +251,7 @@ export default function RoomPage() {
         <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold text-chalk">Standings</h2>
+              <h2 className="font-display text-lg font-semibold gradient-text">Standings</h2>
               {replayOn ? (
                 <button onClick={() => setReplayOn(false)} className="text-xs font-semibold text-turf hover:underline">
                   ■ stop replay
@@ -293,8 +293,8 @@ export default function RoomPage() {
             </div>
             <PickEm matches={boardMatches} />
 
-            <div className="card p-4 text-xs text-muted">
-              <div className="mb-1 font-semibold text-chalk">Provably-fair draft</div>
+            <div className="card card-ring p-4 text-xs text-muted">
+              <div className="mb-1 font-semibold text-aqua">Provably-fair draft</div>
               <div>Seed (Solana blockhash):</div>
               <div className="mt-1 break-all font-mono text-turf">{room.draftSeed || "—"}</div>
               {room.finalTx && (

@@ -44,10 +44,13 @@ export default function RoomPage() {
   }, [replayOn, vmin]);
 
   const boardMatches = replayOn ? replayStateAt(scriptRef.current, vmin) : matches;
-  const standings = useMemo(
+  const liveStandings = useMemo(
     () => (room ? computeStandings(room.members, boardMatches, room.scoring) : []),
     [room, boardMatches]
   );
+  // A finalized room shows the frozen standings snapshot; otherwise it's live.
+  const standings =
+    room?.status === "final" && room.finalStandings?.length ? room.finalStandings : liveStandings;
   const champion = room?.status === "final" ? standings[0] : undefined;
 
   async function post(path: string, body: any) {
@@ -85,8 +88,7 @@ export default function RoomPage() {
     if (!code || !me) return;
     setBusy("final");
     try {
-      const snapshot = standings.map((s) => ({ rank: s.rank, name: s.name, wallet: s.wallet, points: s.points, teams: s.teams }));
-      await post(`/api/rooms/${code}/finalize`, { hostWallet: me, standings: snapshot });
+      await post(`/api/rooms/${code}/finalize`, { hostWallet: me, standings });
       await reload();
     } catch (e: any) { setErr(e.message); } finally { setBusy(null); }
   }

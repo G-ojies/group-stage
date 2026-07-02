@@ -7,7 +7,7 @@
  * All functions are async so call sites are identical regardless of backend.
  */
 import { Redis } from "@upstash/redis";
-import { DEFAULT_SCORING, type ScoreConfig } from "./scoring";
+import { DEFAULT_SCORING, type ScoreConfig, type MemberStanding } from "./scoring";
 import { makeRoomCode } from "./format";
 
 export type RoomStatus = "lobby" | "live" | "final";
@@ -34,16 +34,8 @@ export interface Room {
   draftTx?: string;
   finalTx?: string;
   finalizedAt?: number;
-  finalStandings?: FinalStanding[];
+  finalStandings?: MemberStanding[];
   championBadgeMint?: string;
-}
-
-export interface FinalStanding {
-  rank: number;
-  name: string;
-  wallet?: string;
-  points: number;
-  teams: string[];
 }
 
 const TTL_SECONDS = 60 * 60 * 24 * 30; // rooms live 30 days

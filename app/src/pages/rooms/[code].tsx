@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { TopBar, WalletButton, TeamBadge } from "@/components/ui";
@@ -7,6 +7,7 @@ import MatchTicker from "@/components/MatchTicker";
 import PickEm from "@/components/PickEm";
 import { useLiveMatches, useRoom } from "@/lib/hooks";
 import { computeStandings } from "@/lib/scoring";
+import { buildReplayScript, replayStateAt, REPLAY_TOTAL_MIN, type ReplayMatch } from "@/lib/replay";
 import { shortAddr } from "@/lib/format";
 import { sendMemo, explorerTx } from "@/lib/attest";
 
@@ -25,9 +26,26 @@ export default function RoomPage() {
   const [playerName, setPlayerName] = useState("");
   const [copied, setCopied] = useState(false);
 
+  // Demo replay: accelerate a full matchday over the real fixtures so the board
+  // animates on demand (for the demo video when nothing is live).
+  const [replayOn, setReplayOn] = useState(false);
+  const [vmin, setVmin] = useState(0);
+  const scriptRef = useRef<ReplayMatch[]>([]);
+  const startReplay = () => {
+    scriptRef.current = buildReplayScript(matches);
+    setVmin(0);
+    setReplayOn(true);
+  };
+  useEffect(() => {
+    if (!replayOn || vmin >= REPLAY_TOTAL_MIN) return;
+    const h = setTimeout(() => setVmin((v) => Math.min(v + 0.9, REPLAY_TOTAL_MIN)), 360);
+    return () => clearTimeout(h);
+  }, [replayOn, vmin]);
+
+  const boardMatches = replayOn ? replayStateAt(scriptRef.current, vmin) : matches;
   const standings = useMemo(
-    () => (room ? computeStandings(room.members, matches, room.scoring) : []),
-    [room, matches]
+    () => (room ? computeStandings(room.members, boardMatches, room.scoring) : []),
+    [room, boardMatches]
   );
   const champion = room?.status === "final" ? standings[0] : undefined;
 
@@ -190,17 +208,46 @@ export default function RoomPage() {
           <div>
             <div className="mb-2 flex items-center justify-between">
               <h2 className="font-display text-lg font-semibold text-chalk">Standings</h2>
-              <span className="text-xs text-muted">updates live from the pitch</span>
+              {replayOn ? (
+                <button onClick={() => setReplayOn(false)} className="text-xs font-semibold text-turf hover:underline">
+                  ■ stop replay
+                </button>
+              ) : (
+                <button onClick={startReplay} className="chip px-2.5 py-1 text-xs font-semibold text-turf hover:bg-white/10">
+                  ▶ Demo replay
+                </button>
+              )}
             </div>
+
+            {replayOn && (
+              <div className="card mb-3 p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-turf">▶ DEMO REPLAY · simulated matchday</span>
+                  <span className="tabular-nums text-chalk">{Math.min(Math.floor(vmin), 90)}&apos;</span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div className="h-full bg-turf transition-all duration-300" style={{ width: `${Math.min(100, (vmin / REPLAY_TOTAL_MIN) * 100)}%` }} />
+                </div>
+                <div className="mt-1 flex justify-between text-[10px] text-muted">
+                  <span>real teams &amp; fixtures · goals sped up</span>
+                  {vmin >= REPLAY_TOTAL_MIN && (
+                    <button onClick={startReplay} className="text-turf hover:underline">↻ restart</button>
+                  )}
+                </div>
+              </div>
+            )}
+
             <Leaderboard standings={standings} />
           </div>
 
           <div className="space-y-5">
             <div>
-              <h3 className="mb-2 font-display text-sm font-semibold uppercase tracking-wide text-muted">Live matches</h3>
-              <MatchTicker matches={matches} />
+              <h3 className="mb-2 font-display text-sm font-semibold uppercase tracking-wide text-muted">
+                {replayOn ? "Replay matches" : "Live matches"}
+              </h3>
+              <MatchTicker matches={boardMatches} />
             </div>
-            <PickEm matches={matches} />
+            <PickEm matches={boardMatches} />
 
             <div className="card p-4 text-xs text-muted">
               <div className="mb-1 font-semibold text-chalk">Provably-fair draft</div>

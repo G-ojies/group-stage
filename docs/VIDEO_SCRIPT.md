@@ -17,13 +17,14 @@
 - [ ] Use a clean browser window at **1920×1080**, 100% zoom, no unrelated tabs.
 - [ ] **Phantom** (or any wallet) installed and **switched to Devnet**, with a little devnet SOL
       (for the on-chain "anchor result" tx at the end). Get some at faucet.solana.com if needed.
-- [ ] **Check for a live match** so the leaderboard visibly ticks during the demo:
+- [ ] **Decide your Scene 4 source.** Best case: record during a window with a real in-play
+      fixture (check with the command below). If nothing is live, use the built-in **▶ Demo replay**
+      button in a room — it accelerates a full matchday over the real fixtures so the board
+      animates on demand (see Scene 4). Either way the mechanic shown is identical.
       ```
       curl -s https://group-stage.vercel.app/api/live/matches \
         | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const j=JSON.parse(d);console.log(j.matches.filter(m=>m.inPlay).map(m=>m.home+' '+m.homeTally.goals+'-'+m.awayTally.goals+' '+m.away+' ('+m.phase+')'))})"
       ```
-      Record during a window with ≥1 in-play fixture for the real-time "wow". (If none are live,
-      see **Fallback** at the bottom — we can add a replay mode.)
 - [ ] Pre-stage a room with 3–4 players so the leaderboard looks alive, OR create it live and add
       players named after real people ("You", "Sam", "Ada", "Tunde"). Have the join code ready.
 - [ ] Record voice separately if you can — cleaner than live narration. Keep energy up; this is a
@@ -80,9 +81,11 @@ panel and point at the **seed (Solana blockhash)**.
 ---
 
 ### Scene 4 — The live leaderboard (THE moment) (2:05 – 3:20)
-**On screen:** The standings board. Point out each player's flags and running goal counts. Then —
-ideally on a live goal — the row **flashes green and re-sorts**. If you can catch a real goal, let
-it breathe on camera. Show the live match ticker updating alongside.
+**On screen:** The standings board. Point out each player's flags and running goal counts. Then
+either catch a real live goal, **or click the "▶ Demo replay" button** (top-right of Standings): a
+full matchday plays out over ~35 seconds — goals land, rows **flash green and re-sort**, and the
+lead changes. Let the final re-sort breathe on camera. The "▶ DEMO REPLAY" banner is honest on
+screen; narrate over it naturally.
 
 **VO:**
 > "And here's where it comes alive. Every player's score comes straight from what's happening on the
@@ -144,11 +147,13 @@ simple architecture card: `TxLINE feed → /api/live/matches → scoring engine 
 - `GET /api/scores/stream` — the live push feed
 - Game phase decoded from `StatusId` (2 = 1st half, 4 = 2nd half, 5 = full time)
 
-## ▶️ Fallback if no match is live at record time
-The "real-time" beat is strongest with a live goal. If the feed has no in-play fixture in your
-recording window, either (a) record during a scheduled World Cup kickoff (check the ticker times),
-or (b) ask me to add a **replay mode** that plays back a finished match's real TxLINE score updates
-at speed — so the leaderboard animates on demand, any time, using genuine TxLINE data.
+## ▶️ Demo replay (built-in, for a reliable Scene 4)
+The "real-time" beat is strongest with a live goal, but you can't count on one at record time. In
+any drafted room, the **▶ Demo replay** button (top-right of the Standings panel) accelerates a full
+matchday over the real World Cup fixtures/teams: a virtual clock runs 0→90', goals land at their
+minutes, and the leaderboard flashes + re-sorts — finishing in ~35s. It uses real feed scores where
+they exist and deterministic scorelines otherwise, and is clearly labelled "DEMO REPLAY" on screen
+so nothing is misrepresented. Hit **↻ restart** to run it again for extra takes.
 
 ## 📤 Where to post
 Upload to **YouTube (unlisted)** or **Loom**, keep it **public/anyone-with-link**, and paste the URL

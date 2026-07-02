@@ -5,54 +5,99 @@
 :root {
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-sans: "Inter", system-ui, sans-serif;
+  --brand: linear-gradient(100deg, #3DFF7A 0%, #22E3C3 28%, #4C8DFF 55%, #9B6BFF 78%, #FF5DA2 100%);
 }
 
 html, body {
-  background-color: #070B10;
-  color: #EAF1F5;
+  background-color: #060910;
+  color: #EEF3F8;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
-
-/* Stadium-night backdrop: deep vignette + faint pitch stripes */
+/* Soft colour wash so the page never reads as flat black */
 body {
   background-image:
-    radial-gradient(1200px 600px at 50% -10%, rgba(61, 255, 122, 0.10), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(255, 203, 71, 0.06), transparent 55%),
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 96px);
+    radial-gradient(1100px 620px at 80% -10%, rgba(155,107,255,0.10), transparent 60%),
+    radial-gradient(1000px 560px at 10% 0%, rgba(34,227,195,0.10), transparent 58%);
   background-attachment: fixed;
 }
 
-::selection { background: rgba(61,255,122,0.3); }
+::selection { background: rgba(76,141,255,0.35); }
 
 .font-display { font-family: var(--font-display); }
 
+/* ---- Aurora backdrop (fluid, drifting colour) ---------------------------- */
+.aurora { position: fixed; inset: 0; z-index: -10; overflow: hidden; pointer-events: none; }
+.aurora::after { /* fine grain to stop gradient banding */
+  content: ""; position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.014) 0 1px, transparent 1px 3px);
+  opacity: 0.5;
+}
+.blob { position: absolute; border-radius: 9999px; filter: blur(80px); opacity: 0.4; will-change: transform; }
+.blob-1 { top: -18%; left: -14%; width: 42vw; height: 42vw; background: radial-gradient(circle at 30% 30%, #22E3C3, transparent 68%); opacity: 0.4; }
+.blob-2 { top: -14%; right: -16%; width: 40vw; height: 40vw; background: radial-gradient(circle at 60% 40%, #9B6BFF, transparent 68%); opacity: 0.4; }
+.blob-3 { bottom: -26%; left: 24%; width: 46vw; height: 46vw; background: radial-gradient(circle at 50% 50%, #3DFF7A, transparent 70%); opacity: 0.28; }
+.blob-4 { top: 40%; right: -14%; width: 34vw; height: 34vw; background: radial-gradient(circle at 40% 60%, #FF5DA2, transparent 70%); opacity: 0.32; }
+
+/* ---- Text + surfaces ----------------------------------------------------- */
+.gradient-text {
+  background: var(--brand);
+  background-size: 200% auto;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+  animation: sheen 8s linear infinite;
+}
+
 .card {
-  background: linear-gradient(180deg, rgba(19,27,38,0.9), rgba(14,20,29,0.9));
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 18px;
-  backdrop-filter: blur(6px);
+  background: linear-gradient(180deg, rgba(20,28,42,0.72), rgba(12,18,28,0.72));
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 20px;
+  backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: 0 24px 60px -30px rgba(0,0,0,0.8);
+}
+/* Gradient-ring card for hero surfaces */
+.card-ring { position: relative; }
+.card-ring::before {
+  content: ""; position: absolute; inset: 0; border-radius: 20px; padding: 1px;
+  background: var(--brand); opacity: 0.4;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
 }
 
 .chip {
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
   border-radius: 999px;
+  backdrop-filter: blur(8px);
 }
 
-.turf-glow { box-shadow: 0 0 0 1px rgba(61,255,122,0.5), 0 0 32px -8px rgba(61,255,122,0.55); }
-.gold-glow { box-shadow: 0 0 0 1px rgba(255,203,71,0.55), 0 0 40px -10px rgba(255,203,71,0.5); }
+.turf-glow { box-shadow: 0 0 0 1px rgba(61,255,122,0.45), 0 0 42px -10px rgba(61,255,122,0.55); }
+.gold-glow { box-shadow: 0 0 0 1px rgba(255,203,71,0.55), 0 0 48px -12px rgba(255,203,71,0.5); }
 
+/* ---- Buttons ------------------------------------------------------------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-weight: 600; border-radius: 12px; transition: all .15s ease;
-  cursor: pointer; white-space: nowrap;
+  font-weight: 600; border-radius: 14px; cursor: pointer; white-space: nowrap;
+  transition: transform 120ms ease-out, box-shadow 150ms ease-out, background-color 120ms ease-out, opacity 120ms ease-out;
 }
-.btn-primary { background: #3DFF7A; color: #06210F; padding: 12px 20px; }
-.btn-primary:hover { background: #5BFF8F; transform: translateY(-1px); }
-.btn-primary:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-.btn-ghost { background: rgba(255,255,255,0.05); color: #EAF1F5; padding: 12px 20px; border: 1px solid rgba(255,255,255,0.09); }
-.btn-ghost:hover { background: rgba(255,255,255,0.09); }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 2px #060910, 0 0 0 4px rgba(76,141,255,0.9); }
+.btn-primary {
+  color: #05210F; padding: 12px 22px;
+  background-image: linear-gradient(100deg, #3DFF7A, #22E3C3 60%, #4C8DFF);
+  background-size: 160% auto;
+  box-shadow: 0 10px 30px -10px rgba(34,227,195,0.5);
+}
+.btn-primary:hover { background-position: right center; transform: translateY(-1px); box-shadow: 0 14px 36px -10px rgba(76,141,255,0.6); }
+.btn-primary:active { transform: translateY(1px) scale(0.99); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-ghost {
+  background: rgba(255,255,255,0.05); color: #EEF3F8; padding: 12px 22px;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.10); transform: translateY(-1px); }
+.btn-ghost:active { transform: translateY(1px) scale(0.99); }
+.btn-ghost:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
 .live-dot { width: 8px; height: 8px; border-radius: 999px; background: #FF4D4D; box-shadow: 0 0 0 0 rgba(255,77,77,0.6); animation: livepulse 1.6s infinite; }
 @keyframes livepulse {
@@ -61,21 +106,38 @@ body {
   100% { box-shadow: 0 0 0 0 rgba(255,77,77,0); }
 }
 
+/* ---- Inputs -------------------------------------------------------------- */
 input, select {
   background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 12px; color: #EAF1F5; padding: 12px 14px; outline: none; width: 100%;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px; color: #EEF3F8; padding: 12px 15px; outline: none; width: 100%;
+  transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
 }
-input:focus, select:focus { border-color: rgba(61,255,122,0.6); }
+input::placeholder { color: #6C7A8C; }
+input:focus, select:focus { border-color: rgba(34,227,195,0.7); box-shadow: 0 0 0 3px rgba(34,227,195,0.15); }
 
-/* Wallet adapter button restyle to match the brand */
+/* ---- Wallet adapter restyle --------------------------------------------- */
 .wallet-adapter-button {
   background: rgba(255,255,255,0.05) !important;
   border: 1px solid rgba(255,255,255,0.10) !important;
-  border-radius: 12px !important;
-  height: 44px !important;
+  border-radius: 14px !important;
+  height: 46px !important;
   font-family: var(--font-sans) !important;
   font-weight: 600 !important;
+  transition: transform 120ms ease-out, background-color 120ms ease-out !important;
 }
-.wallet-adapter-button:not([disabled]):hover { background: rgba(255,255,255,0.10) !important; }
-.wallet-adapter-button-trigger { background: #3DFF7A !important; color: #06210F !important; }
+.wallet-adapter-button:not([disabled]):hover { background: rgba(255,255,255,0.10) !important; transform: translateY(-1px); }
+.wallet-adapter-button-trigger {
+  background-image: linear-gradient(100deg, #3DFF7A, #22E3C3 60%, #4C8DFF) !important;
+  color: #05210F !important;
+  box-shadow: 0 10px 30px -12px rgba(34,227,195,0.5) !important;
+}
+
+/* ---- Motion safety ------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .gradient-text { animation: none; }
+  .blob { animation: none !important; }
+  .live-dot { animation: none; }
+  .btn, .btn:hover, .btn:active { transition: none; transform: none; }
+  * { scroll-behavior: auto !important; }
+}

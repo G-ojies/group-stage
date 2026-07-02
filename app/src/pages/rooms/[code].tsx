@@ -229,7 +229,7 @@ export default function RoomPage() {
             <h2 className="font-display text-lg font-semibold text-chalk">The draft</h2>
             <p className="mt-1 text-sm text-muted">
               {room.teamPool.length} World Cup teams will be dealt in a snake order seeded by a live Solana
-              blockhash — provably fair, fully verifiable.
+              blockhash, so it’s provably fair and fully verifiable.
             </p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {room.teamPool.slice(0, 24).map((t) => <TeamBadge key={t} team={t} className="chip px-2 py-0.5 text-xs" />)}

@@ -8,7 +8,7 @@ function TeamChip({ ts }: { ts: TeamStats }) {
   const flashed = useFlash(ts.goalsFor);
   return (
     <span
-      title={`${ts.team}${ts.opponent ? ` vs ${ts.opponent}` : ""} — ${ts.points} pts`}
+      title={`${ts.team}${ts.opponent ? ` vs ${ts.opponent}` : ""} · ${ts.points} pts`}
       className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs transition-colors ${
         ts.live ? "bg-turf/10 text-turf" : ts.played ? "bg-white/5 text-muted" : "bg-white/5 text-muted/70"
       } ${flashed ? "animate-goalflash" : ""}`}

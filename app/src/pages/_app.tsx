@@ -1,6 +1,7 @@
 import type { AppProps } from "next/app";
 import { Inter, Space_Grotesk } from "next/font/google";
 import dynamic from "next/dynamic";
+import Aurora from "@/components/Aurora";
 import "@/styles/globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -12,6 +13,7 @@ const AppWalletProvider = dynamic(() => import("@/components/WalletProvider"), {
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <div className={`${inter.variable} ${grotesk.variable}`}>
+      <Aurora />
       <AppWalletProvider>
         <Component {...pageProps} />
       </AppWalletProvider>

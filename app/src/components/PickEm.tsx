@@ -113,8 +113,8 @@ export default function PickEm({ matches }: { matches: MatchState[] }) {
         <span>
           {pick
             ? pick.resolved
-              ? pick.correct ? "✓ Called it — streak up!" : "✗ Missed — streak reset"
-              : m.inPlay ? (onTrack ? "On track…" : "Off track — needs a goal") : "Locked · resolves at full time"
+              ? pick.correct ? "✓ Called it! Streak up." : "✗ Missed. Streak reset."
+              : m.inPlay ? (onTrack ? "On track…" : "Off track, needs a goal") : "Locked · resolves at full time"
             : "Call the result to start a streak"}
         </span>
         <button className="text-turf hover:underline" onClick={() => setIdx((i) => (i + 1) % eligible.length)}>

@@ -2,18 +2,41 @@ import { PhasePill } from "./ui";
 import { flagFor } from "@/lib/teams";
 import type { MatchState } from "@/lib/matchState";
 
+// Winner of a finished match: 1 = home, -1 = away, 0 = draw/undecided.
+function winner(m: MatchState): 1 | 0 | -1 {
+  if (!m.finished) return 0;
+  if (m.homeTally.goals > m.awayTally.goals) return 1;
+  if (m.awayTally.goals > m.homeTally.goals) return -1;
+  return 0;
+}
+
 function Score({ m }: { m: MatchState }) {
   const shown = m.inPlay || m.finished;
+  const w = winner(m);
+  // Live scores glow turf; finished scores emphasise the winner and dim the loser.
+  const cls = (isThisSide: boolean, otherWon: boolean) =>
+    m.inPlay ? "text-turf" : otherWon ? "text-muted/60" : isThisSide ? "text-turf" : "text-chalk";
   return (
     <div className="flex items-center gap-2 font-display text-xl font-bold tabular-nums">
-      <span className={m.inPlay ? "text-turf" : "text-chalk"}>{shown ? m.homeTally.goals : "–"}</span>
+      <span className={cls(w === 1, w === -1)}>{shown ? m.homeTally.goals : "–"}</span>
       <span className="text-muted">:</span>
-      <span className={m.inPlay ? "text-turf" : "text-chalk"}>{shown ? m.awayTally.goals : "–"}</span>
+      <span className={cls(w === -1, w === 1)}>{shown ? m.awayTally.goals : "–"}</span>
+    </div>
+  );
+}
+
+function TeamRow({ team, dimmed, won }: { team: string; dimmed: boolean; won: boolean }) {
+  return (
+    <div className={`flex items-center gap-2 truncate ${dimmed ? "text-muted/60" : ""}`}>
+      <span className="text-lg">{flagFor(team)}</span>
+      <span className={`truncate text-sm ${won ? "font-semibold text-chalk" : ""}`}>{team}</span>
+      {won && <span aria-hidden="true" className="ml-auto text-xs text-turf">✓</span>}
     </div>
   );
 }
 
 function MatchCard({ m }: { m: MatchState }) {
+  const w = winner(m);
   const accent = m.inPlay
     ? "linear-gradient(90deg,#3DFF7A,#22E3C3)"
     : m.finished
@@ -30,8 +53,8 @@ function MatchCard({ m }: { m: MatchState }) {
       </div>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex items-center gap-2 truncate"><span className="text-lg">{flagFor(m.home)}</span><span className="truncate text-sm">{m.home}</span></div>
-          <div className="flex items-center gap-2 truncate"><span className="text-lg">{flagFor(m.away)}</span><span className="truncate text-sm">{m.away}</span></div>
+          <TeamRow team={m.home} dimmed={w === -1} won={w === 1} />
+          <TeamRow team={m.away} dimmed={w === 1} won={w === -1} />
         </div>
         <Score m={m} />
       </div>

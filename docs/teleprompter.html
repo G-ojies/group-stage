@@ -1,0 +1,220 @@
+<title>GroupStage — Demo Teleprompter</title>
+<style>
+  :root {
+    --bg: #070B12;
+    --panel: #0E1420;
+    --line: rgba(255,255,255,0.08);
+    --text: #EEF3F8;
+    --muted: #93A3B6;
+    --faint: #5A6A7D;
+    --gold: #FFCB47;
+    --brand: linear-gradient(100deg,#3DFF7A 0%,#22E3C3 28%,#4C8DFF 55%,#9B6BFF 78%,#FF5DA2 100%);
+    --reader: 2.15rem;             /* adjustable spoken-line size */
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  /* ambient brand wash — static, low, readability first */
+  .wash { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(900px 520px at 12% -6%, rgba(34,227,195,0.10), transparent 60%),
+      radial-gradient(900px 560px at 88% 4%, rgba(155,107,255,0.10), transparent 60%);
+  }
+
+  /* ---- control bar ---- */
+  .bar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 12px clamp(16px, 4vw, 40px);
+    background: rgba(7,11,18,0.78);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .brandmark { display: flex; align-items: center; gap: 9px; font-weight: 700; letter-spacing: -0.01em; }
+  .dot { width: 22px; height: 22px; border-radius: 7px; background: var(--brand); display: grid; place-items: center; font-size: 12px; }
+  .grad { background: var(--brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .spacer { flex: 1 1 auto; }
+  .group { display: flex; align-items: center; gap: 6px; }
+  .lbl { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); }
+  button {
+    font: inherit; color: var(--text); cursor: pointer;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 12px; min-width: 40px; min-height: 40px;
+    transition: background-color 120ms ease, transform 120ms ease, border-color 120ms ease;
+  }
+  button:hover { background: rgba(255,255,255,0.10); }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #4C8DFF; }
+  button[aria-pressed="true"] { border-color: transparent; background-image: var(--brand); color: #05210F; font-weight: 650; }
+  input[type="range"] { width: 92px; accent-color: #22E3C3; }
+  .total { font-variant-numeric: tabular-nums; color: var(--gold); font-weight: 650; }
+
+  /* ---- reader ---- */
+  main { position: relative; z-index: 1; max-width: 940px; margin: 0 auto; padding: clamp(20px,4vw,44px) clamp(18px,4vw,40px) 40vh; }
+  .prep {
+    border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,0.02);
+    padding: 16px 18px; margin-bottom: 30px; color: var(--muted); font-size: 0.95rem;
+  }
+  .prep b { color: var(--text); }
+  .prep ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+
+  .scene { padding: 26px 0; border-top: 1px solid var(--line); }
+  .eyebrow { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .snum { font-weight: 800; font-size: 0.95rem; letter-spacing: 0.16em; }
+  .stitle { font-weight: 700; font-size: 1.05rem; color: var(--text); }
+  .time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--gold); font-size: 0.9rem; font-weight: 600; letter-spacing: 0.02em; }
+
+  /* the words you actually say */
+  .say { font-size: var(--reader); line-height: 1.42; font-weight: 450; letter-spacing: -0.01em; text-wrap: pretty; margin: 0 0 14px; }
+  .say + .say { margin-top: 0; }
+
+  /* stage direction — demoted so it's never read aloud */
+  .do {
+    display: flex; gap: 10px; align-items: flex-start;
+    font-size: 0.92rem; color: var(--muted); line-height: 1.45;
+    border-left: 2px solid rgba(76,141,255,0.5); padding: 4px 0 4px 14px; margin-top: 6px;
+  }
+  .do .tag { flex: none; font-size: 10px; letter-spacing: 0.16em; font-weight: 800; color: #7FA9FF;
+    border: 1px solid rgba(76,141,255,0.4); border-radius: 6px; padding: 2px 6px; margin-top: 2px; text-transform: uppercase; }
+
+  .rule { margin-top: 30px; border: 1px solid rgba(255,203,71,0.35); background: rgba(255,203,71,0.06);
+    border-radius: 14px; padding: 14px 18px; color: var(--text); font-size: 0.98rem; }
+  .rule b { color: var(--gold); }
+  .endpoints { margin-top: 22px; color: var(--faint); font-size: 0.85rem; line-height: 1.7; }
+  .endpoints code { color: var(--muted); }
+
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  @media (max-width: 560px) { .stitle { display: none; } .lbl { display: none; } }
+</style>
+
+<div class="wash" aria-hidden="true"></div>
+
+<header class="bar">
+  <span class="brandmark"><span class="dot">⚽</span>Group<span class="grad">Stage</span>&nbsp;<span style="color:var(--faint);font-weight:500">Teleprompter</span></span>
+  <span class="spacer"></span>
+  <span class="group"><span class="lbl">Text</span>
+    <button id="smaller" aria-label="Smaller text">A−</button>
+    <button id="bigger" aria-label="Bigger text">A+</button>
+  </span>
+  <span class="group"><span class="lbl">Scroll</span>
+    <button id="play" aria-pressed="false" aria-label="Toggle auto-scroll">▶ Auto</button>
+    <input id="speed" type="range" min="10" max="80" value="34" aria-label="Scroll speed">
+  </span>
+  <span class="total" title="Target runtime">4:45</span>
+</header>
+
+<main>
+  <div class="prep">
+    <b>Before you press record:</b>
+    <ul>
+      <li>Hide bookmarks bar (Ctrl+Shift+B) · Brave at 1080p · one tab: <b>group-stage.vercel.app</b></li>
+      <li>Phantom on <b>Devnet</b>, funded · Loom set to capture the tab (confirm it's recording)</li>
+      <li>No match live now → Scene 4 uses the <b>▶ Demo replay</b> button · do one silent practice pass</li>
+      <li>Delivery: warm and a little excited. Read the <b>big lines</b>; the blue <span style="color:#7FA9FF">DO</span> notes are just for you.</li>
+    </ul>
+  </div>
+
+  <section class="scene">
+    <div class="eyebrow"><span class="snum grad">SCENE 1</span><span class="stitle">The hook</span><span class="time">0:00 – 0:32</span></div>
+    <p class="say">Every four years, hundreds of millions of us run the same little ritual — the office World Cup sweepstake. You pull a country out of a hat and follow it for a month.</p>
+    <p class="say">There's just one problem: it lives in a spreadsheet that <em>somebody</em> has to update by hand, and it's always out of date. So we rebuilt it.</p>
+    <p class="say">This is <strong>GroupStage</strong> — your office sweepstake, made live, automatic, and on-chain.</p>
+    <div class="do"><span class="tag">Do</span><span>Landing page, slow. Let the gradient headline sit on screen.</span></div>
+  </section>
+
+  <section class="scene">
+    <div class="eyebrow"><span class="snum grad">SCENE 2</span><span class="stitle">Connect &amp; create</span><span class="time">0:32 – 1:12</span></div>
+    <p class="say">Right at the top — those aren't mock scores. That's the live World Cup feed, straight from TxLINE.</p>
+    <p class="say">I sign in with a Solana wallet… name my room "The Office Cup"… and I've got a share code. I drop that in the group chat, and everyone jumps in from their phone. No app to install, no crypto knowledge needed.</p>
+    <div class="do"><span class="tag">Do</span><span>Point at the live ticker → Connect Wallet → approve → type room name + your name → Create → click the code to copy.</span></div>
+  </section>
+
+  <section class="scene">
+    <div class="eyebrow"><span class="snum grad">SCENE 3</span><span class="stitle">Provably-fair draft</span><span class="time">1:12 – 2:00</span></div>
+    <p class="say">Now the draw. In a normal sweepstake, you just trust whoever's holding the hat.</p>
+    <p class="say">Here, the draft is seeded by a live Solana blockhash — public, and impossible to predict or rig. Everyone gets their teams…</p>
+    <p class="say">…and because that seed is right here on screen, anyone can re-run the exact same draft and prove it was fair. It's the office sweepstake — but trustless.</p>
+    <div class="do"><span class="tag">Do</span><span>Add players Sam, Ada, Tunde → Run provably-fair draft → scroll to the seed panel and point at the blockhash.</span></div>
+  </section>
+
+  <section class="scene">
+    <div class="eyebrow"><span class="snum grad">SCENE 4</span><span class="stitle">The live leaderboard — the moment</span><span class="time">2:00 – 3:15</span></div>
+    <p class="say">And this is where it comes alive. I'll run a full matchday, sped up — and every point you see is real TxLINE match data: goals, results, clean sheets.</p>
+    <p class="say">Watch the board… there's a goal… a team's tally ticks up, the points move, and the whole leaderboard re-sorts itself, live. No spreadsheet, no refresh.</p>
+    <p class="say">This — the lead flipping on a late goal — is the moment your group chat goes off. And at full time, we've got a champion.</p>
+    <div class="do"><span class="tag">Do</span><span>Click ▶ Demo replay. Let the full ~35s play. Don't rush — let the rows flash and re-sort, and let the final lead-change land.</span></div>
+  </section>
+
+  <section class="scene">
+    <div class="eyebrow"><span class="snum grad">SCENE 5</span><span class="stitle">Momentum &amp; the business</span><span class="time">3:15 – 3:52</span></div>
+    <p class="say">Between your team's games, there's Momentum — quick calls on live matches that build a personal streak, so there's always a reason to keep the app open.</p>
+    <p class="say">And the business is simple: premium and sponsored rooms, cosmetic packs, prize pools. For TxODDS, GroupStage turns your live data layer into something millions of everyday fans actually touch.</p>
+    <div class="do"><span class="tag">Do</span><span>Show the Momentum widget → call a match result → point at the streak counter.</span></div>
+  </section>
+
+  <section class="scene">
+    <div class="eyebrow"><span class="snum grad">SCENE 6</span><span class="stitle">Champion, badge &amp; how TxLINE powers it</span><span class="time">3:52 – 4:35</span></div>
+    <p class="say">When it's over, the champion is crowned — and they mint a one-of-one Champion Badge: an NFT that lands straight in their wallet on Solana.</p>
+    <p class="say">Under the hood, GroupStage pulls fixtures and live scores from TxLINE's snapshot and stream endpoints, turns goals, cards and corners into points, and that drives everything you just saw. TxLINE is the live heartbeat of the whole product.</p>
+    <div class="do"><span class="tag">Do</span><span>With the replay finished and still showing → Finalize standings → champion banner appears → Mint Champion Badge NFT → approve in Phantom → click "view NFT".</span></div>
+  </section>
+
+  <section class="scene">
+    <div class="eyebrow"><span class="snum grad">SCENE 7</span><span class="stitle">Close</span><span class="time">4:35 – 4:48</span></div>
+    <p class="say">GroupStage — your office World Cup sweepstake: live, automatic, and on-chain. It's live right now at group-stage dot vercel dot app. Thanks for watching.</p>
+    <div class="do"><span class="tag">Do</span><span>Back on the landing page with the URL visible. Smile in your voice.</span></div>
+  </section>
+
+  <div class="rule"><b>The one rule:</b> run the replay to <b>full-time first</b>, then Finalize (Scene 6). Finalize snapshots whatever the board shows — replay first gives a clear champion; finalize first ties everyone at zero.</div>
+
+  <div class="endpoints">
+    <b style="color:var(--muted)">TxLINE endpoints to name (the "backend" requirement):</b><br>
+    <code>GET /api/fixtures/snapshot?competitionId=72</code> — fixtures + team pool ·
+    <code>GET /api/scores/snapshot/{fixtureId}</code> — live goals/cards/corners ·
+    <code>GET /api/scores/stream</code> — live push feed · phase from <code>StatusId</code> (2=1H, 4=2H, 5=FT)
+  </div>
+</main>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var size = 2.15;
+    function setSize(v) { size = Math.max(1.3, Math.min(3.4, v)); root.style.setProperty('--reader', size.toFixed(2) + 'rem'); }
+    document.getElementById('bigger').addEventListener('click', function () { setSize(size + 0.15); });
+    document.getElementById('smaller').addEventListener('click', function () { setSize(size - 0.15); });
+
+    var playBtn = document.getElementById('play');
+    var speedEl = document.getElementById('speed');
+    var playing = false, raf = null, last = 0;
+    function step(ts) {
+      if (!playing) return;
+      if (!last) last = ts;
+      var dt = (ts - last) / 1000; last = ts;
+      window.scrollBy(0, Number(speedEl.value) * dt);
+      raf = requestAnimationFrame(step);
+    }
+    function setPlaying(p) {
+      playing = p; playBtn.setAttribute('aria-pressed', p ? 'true' : 'false');
+      playBtn.textContent = p ? '⏸ Auto' : '▶ Auto';
+      if (p) { last = 0; raf = requestAnimationFrame(step); } else if (raf) { cancelAnimationFrame(raf); }
+    }
+    playBtn.addEventListener('click', function () { setPlaying(!playing); });
+    // Pause the moment the presenter takes manual control.
+    window.addEventListener('wheel', function () { if (playing) setPlaying(false); }, { passive: true });
+    window.addEventListener('touchstart', function () { if (playing) setPlaying(false); }, { passive: true });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+      if (e.code === 'Space') { e.preventDefault(); setPlaying(!playing); }
+      else if (e.key === '+' || e.key === '=') { setSize(size + 0.15); }
+      else if (e.key === '-') { setSize(size - 0.15); }
+    });
+  })();
+</script>

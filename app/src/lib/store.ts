@@ -124,3 +124,52 @@ export async function addMember(
   await writeRoom(room);
   return room;
 }
+
+// --- Momentum (pick'em streak) ----------------------------------------------
+//
+// The Momentum streak is a personal, cross-room engagement stat keyed by wallet.
+// Persisting it server-side (Redis) means a player's streak follows them across
+// devices and cold starts instead of living only in one browser's localStorage.
+
+export interface MomentumPick {
+  outcome: "home" | "draw" | "away";
+  ts: number;
+  resolved?: boolean;
+  correct?: boolean;
+}
+
+export interface Momentum {
+  picks: Record<number, MomentumPick>;
+  streak: number;
+  best: number;
+  updatedAt: number;
+}
+
+const momentumKey = (wallet: string) => `gs:momentum:${wallet}`;
+
+const gm = globalThis as unknown as { __groupStageMomentum?: Map<string, Momentum> };
+const momMem: Map<string, Momentum> = gm.__groupStageMomentum ?? new Map();
+gm.__groupStageMomentum = momMem;
+
+function emptyMomentum(): Momentum {
+  return { picks: {}, streak: 0, best: 0, updatedAt: 0 };
+}
+
+export async function getMomentum(wallet: string): Promise<Momentum> {
+  const r = getRedis();
+  if (r) return (await r.get<Momentum>(momentumKey(wallet))) ?? emptyMomentum();
+  return momMem.get(wallet) ?? emptyMomentum();
+}
+
+export async function saveMomentum(wallet: string, m: Momentum): Promise<Momentum> {
+  const clean: Momentum = {
+    picks: m.picks ?? {},
+    streak: Math.max(0, m.streak | 0),
+    best: Math.max(0, m.best | 0),
+    updatedAt: Date.now(),
+  };
+  const r = getRedis();
+  if (r) await r.set(momentumKey(wallet), clean, { ex: TTL_SECONDS });
+  else momMem.set(wallet, clean);
+  return clean;
+}

@@ -291,7 +291,7 @@ export default function RoomPage() {
               </h3>
               <MatchTicker matches={boardMatches} />
             </div>
-            <PickEm matches={boardMatches} />
+            <PickEm matches={boardMatches} wallet={me} />
 
             <div className="card card-ring p-4 text-xs text-muted">
               <div className="mb-1 font-semibold text-aqua">Provably-fair draft</div>

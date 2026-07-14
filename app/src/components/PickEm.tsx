@@ -1,17 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { flagFor } from "@/lib/teams";
 import type { MatchState } from "@/lib/matchState";
 
 type Outcome = "home" | "draw" | "away";
 interface Pick { outcome: Outcome; ts: number; }
+type State = { picks: Record<number, Pick & { resolved?: boolean; correct?: boolean }>; streak: number; best: number };
 
 const KEY = "gs_momentum_v1";
-function load(): { picks: Record<number, Pick>; streak: number; best: number } {
+function load(): State {
   if (typeof window === "undefined") return { picks: {}, streak: 0, best: 0 };
   try { return { picks: {}, streak: 0, best: 0, ...JSON.parse(localStorage.getItem(KEY) || "{}") }; }
   catch { return { picks: {}, streak: 0, best: 0 }; }
 }
-function save(s: any) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {} }
+function save(s: State) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {} }
+
+/** Fire-and-forget push to the Redis-backed store so the streak follows the wallet. */
+function pushServer(wallet: string, s: State) {
+  fetch(`/api/momentum/${wallet}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ picks: s.picks, streak: s.streak, best: s.best }),
+  }).catch(() => {});
+}
+const hasData = (s: State) => s.streak > 0 || s.best > 0 || Object.keys(s.picks).length > 0;
 
 function resultOf(m: MatchState): Outcome {
   if (m.homeTally.goals > m.awayTally.goals) return "home";
@@ -24,9 +35,46 @@ function resultOf(m: MatchState): Outcome {
  * or upcoming match, watch live whether you're on track, and build a streak that
  * locks in at full time. Pure live TxLINE data, personal stakes, replayable 104×.
  */
-export default function PickEm({ matches }: { matches: MatchState[] }) {
-  const [state, setState] = useState(() => load());
+export default function PickEm({ matches, wallet }: { matches: MatchState[]; wallet?: string }) {
+  const [state, setState] = useState<State>(() => load());
   const [idx, setIdx] = useState(0);
+
+  // Keep the latest wallet in a ref so persistence closures (including the
+  // resolve effect keyed on `matches`) always target the connected wallet.
+  const walletRef = useRef<string | undefined>(wallet);
+  walletRef.current = wallet;
+  const persist = (next: State) => {
+    save(next);
+    if (walletRef.current) pushServer(walletRef.current, next);
+  };
+
+  // On wallet connect, adopt the durable server streak (merging in any local
+  // picks) so it follows the player across devices; seed the server if empty.
+  useEffect(() => {
+    if (!wallet) return;
+    let cancelled = false;
+    fetch(`/api/momentum/${wallet}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((server: State | null) => {
+        if (cancelled || !server) return;
+        setState((local) => {
+          if (!hasData(server)) {
+            if (hasData(local)) pushServer(wallet, local);
+            return local;
+          }
+          const merged: State = {
+            picks: { ...local.picks, ...server.picks }, // resolved server picks win per fixture
+            streak: server.streak,
+            best: Math.max(local.best || 0, server.best || 0),
+          };
+          save(merged);
+          pushServer(wallet, merged);
+          return merged;
+        });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [wallet]);
 
   const eligible = useMemo(
     () => matches.filter((m) => !m.finished || state.picks[m.fixtureId]).sort((a, b) => {
@@ -51,7 +99,7 @@ export default function PickEm({ matches }: { matches: MatchState[] }) {
         changed = true;
       }
     }
-    if (changed) { setState(next); save(next); }
+    if (changed) { setState(next); persist(next); }
   }, [matches]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!m) return null;
@@ -62,7 +110,7 @@ export default function PickEm({ matches }: { matches: MatchState[] }) {
   function choose(outcome: Outcome) {
     if (pick) return;
     const next = { ...state, picks: { ...state.picks, [m.fixtureId]: { outcome, ts: Date.now() } } };
-    setState(next); save(next);
+    setState(next); persist(next);
   }
 
   const opt = (o: Outcome, label: string) => {
@@ -92,6 +140,7 @@ export default function PickEm({ matches }: { matches: MatchState[] }) {
         <div className="flex items-center gap-3 text-xs">
           <span className="text-turf">🔥 {state.streak} streak</span>
           <span className="text-muted">best {state.best}</span>
+          {wallet && <span className="text-muted" title="Streak saved to your wallet">· synced</span>}
         </div>
       </div>
 

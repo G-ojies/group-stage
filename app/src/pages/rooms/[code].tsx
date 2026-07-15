@@ -113,7 +113,7 @@ export default function RoomPage() {
     if (!code || !me || !room || !publicKey || !signTransaction) return;
     setBusy("anchor");
     try {
-      const memo = `GroupStage ${room.code} FINAL — champion ${champion?.name} (${champion?.points}pts). ` +
+      const memo = `GroupStage ${room.code} FINAL: champion ${champion?.name} (${champion?.points}pts). ` +
         standings.map((s) => `${s.rank}.${s.name}:${s.points}`).join(" ");
       const sig = await sendMemo(connection, publicKey, signTransaction, memo);
       await post(`/api/rooms/${code}/finalize`, { hostWallet: me, finalTx: sig });

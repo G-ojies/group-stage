@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Award, Trophy } from "lucide-react";
 import { useRouter } from "next/router";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { TopBar, WalletButton, TeamBadge } from "@/components/ui";
@@ -164,7 +165,7 @@ export default function RoomPage() {
       {champion && (
         <div className="card gold-glow mb-6 p-5">
           <div className="flex items-center gap-4">
-            <div className="text-4xl">🏆</div>
+            <Trophy className="h-9 w-9 shrink-0 text-gold" strokeWidth={1.5} aria-hidden />
             <div className="flex-1">
               <div className="text-xs uppercase tracking-widest text-gold">Champion</div>
               <div className="font-display text-2xl font-bold text-chalk">{champion.name}</div>
@@ -181,14 +182,24 @@ export default function RoomPage() {
           <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/10 pt-4">
             {room.championBadgeMint ? (
               <>
-                <span className="text-sm font-semibold text-gold">🎖 Champion Badge minted on-chain</span>
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gold">
+                  <Award className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  Champion Badge minted on-chain
+                </span>
                 <a className="text-sm text-turf hover:underline" href={`https://explorer.solana.com/address/${room.championBadgeMint}?cluster=devnet`} target="_blank" rel="noreferrer">view NFT ↗</a>
                 <a className="text-sm text-muted hover:underline" href={`/api/badge/${room.code}/image`} target="_blank" rel="noreferrer">preview art</a>
               </>
             ) : isHost || (champion.wallet && champion.wallet === me) ? (
               publicKey ? (
                 <button className="btn btn-primary" disabled={busy === "badge"} onClick={mintBadge}>
-                  {busy === "badge" ? "Minting…" : "🏆 Mint Champion Badge NFT"}
+                  {busy === "badge" ? (
+                    "Minting…"
+                  ) : (
+                    <>
+                      <Trophy className="h-4 w-4" strokeWidth={2} aria-hidden />
+                      Mint Champion Badge NFT
+                    </>
+                  )}
                 </button>
               ) : (
                 <span className="text-sm text-muted">Connect the champion’s wallet to mint the badge.</span>

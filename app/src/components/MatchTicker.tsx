@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { PhasePill } from "./ui";
 import { flagFor } from "@/lib/teams";
 import type { MatchState } from "@/lib/matchState";
@@ -30,7 +31,7 @@ function TeamRow({ team, dimmed, won }: { team: string; dimmed: boolean; won: bo
     <div className={`flex items-center gap-2 truncate ${dimmed ? "text-muted/60" : ""}`}>
       <span className="text-lg">{flagFor(team)}</span>
       <span className={`truncate text-sm ${won ? "font-semibold text-chalk" : ""}`}>{team}</span>
-      {won && <span aria-hidden="true" className="ml-auto text-xs text-turf">✓</span>}
+      {won && <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-turf" strokeWidth={2.5} aria-label="won" />}
     </div>
   );
 }
@@ -48,7 +49,12 @@ function MatchCard({ m }: { m: MatchState }) {
       <div className="mb-2 flex items-center justify-between">
         <PhasePill m={m} />
         {(m.homeTally.red > 0 || m.awayTally.red > 0) && (
-          <span className="text-xs text-red-400">🟥 {m.homeTally.red + m.awayTally.red}</span>
+          <span className="inline-flex items-center gap-1 text-xs text-red-400">
+            {/* a real red-card glyph (portrait rounded rect), not an emoji */}
+            <span aria-hidden className="inline-block h-3 w-2 rounded-[2px] bg-red-500" />
+            <span className="sr-only">red cards:</span>
+            {m.homeTally.red + m.awayTally.red}
+          </span>
         )}
       </div>
       <div className="flex items-center justify-between gap-3">

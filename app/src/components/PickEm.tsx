@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Flame } from "lucide-react";
 import { flagFor } from "@/lib/teams";
 import type { MatchState } from "@/lib/matchState";
 
@@ -138,7 +139,10 @@ export default function PickEm({ matches, wallet }: { matches: MatchState[]; wal
       <div className="mb-3 flex items-center justify-between">
         <h3 className="font-display font-semibold gradient-text">Momentum</h3>
         <div className="flex items-center gap-3 text-xs">
-          <span className="text-turf">🔥 {state.streak} streak</span>
+          <span className="inline-flex items-center gap-1 text-turf">
+            <Flame className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            {state.streak} streak
+          </span>
           <span className="text-muted">best {state.best}</span>
           {wallet && <span className="text-muted" title="Streak saved to your wallet">· synced</span>}
         </div>

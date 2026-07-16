@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { Medal } from "lucide-react";
 import type { MemberStanding, TeamStats } from "@/lib/scoring";
 import { flagFor } from "@/lib/teams";
 import { shortAddr } from "@/lib/format";
@@ -45,7 +46,6 @@ const PODIUM = {
 
 function Row({ s }: { s: MemberStanding }) {
   const flashed = useFlash(s.points);
-  const medal = s.rank === 1 ? "🥇" : s.rank === 2 ? "🥈" : s.rank === 3 ? "🥉" : null;
   const p = PODIUM[(s.rank <= 3 ? s.rank : 0) as 0 | 1 | 2 | 3];
   return (
     <motion.li
@@ -57,8 +57,10 @@ function Row({ s }: { s: MemberStanding }) {
       className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border px-4 py-3 ${p.row} ${flashed ? "animate-goalflash" : ""}`}
     >
       <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1" style={{ background: p.bar }} />
+      {/* Podium ranks get a Medal icon (coloured by the badge's rank tint);
+          everyone else shows their rank number. */}
       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-display text-sm font-bold ${p.badge}`}>
-        {medal ?? s.rank}
+        {s.rank <= 3 ? <Medal className="h-4 w-4" strokeWidth={2} aria-label={`Rank ${s.rank}`} /> : s.rank}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">

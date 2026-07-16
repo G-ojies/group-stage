@@ -1,4 +1,5 @@
 import type { AppProps } from "next/app";
+import Head from "next/head";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import dynamic from "next/dynamic";
@@ -11,6 +12,9 @@ const AppWalletProvider = dynamic(() => import("@/components/WalletProvider"), {
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <div className={`font-root ${GeistSans.variable} ${GeistMono.variable}`}>
+      <Head>
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+      </Head>
       <Aurora />
       <AppWalletProvider>
         <Component {...pageProps} />

@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { txlineGet } from "@/lib/txlineServer";
 import { toMatchState, WORLD_CUP_COMPETITION_ID } from "@/lib/matchState";
-import type { FixtureRecord } from "@/lib/txlineTypes";
+import { cacheFor, resolveFixtures } from "@/lib/fixtures";
 
 /**
  * GET /api/live/matches?competitionId=72
@@ -11,9 +11,7 @@ import type { FixtureRecord } from "@/lib/txlineTypes";
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const competitionId = Number(req.query.competitionId) || WORLD_CUP_COMPETITION_ID;
   try {
-    const fixtures = (await txlineGet<FixtureRecord[]>(
-      `/api/fixtures/snapshot?competitionId=${competitionId}`
-    )).filter((f) => f.CompetitionId === competitionId);
+    const { fixtures, source } = await resolveFixtures(competitionId);
 
     const states = await Promise.all(
       fixtures.map(async (f) => {
@@ -26,8 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     );
     states.sort((a, b) => a.startTime - b.startTime);
-    res.setHeader("Cache-Control", "s-maxage=4, stale-while-revalidate=8");
-    res.status(200).json({ competitionId, matches: states, ts: Date.now() });
+    res.setHeader("Cache-Control", cacheFor(source, 4));
+    res.status(200).json({ competitionId, matches: states, ts: Date.now(), source });
   } catch (e: any) {
     res.status(502).json({ error: e?.message || "live matches failed" });
   }

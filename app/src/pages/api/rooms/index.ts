@@ -1,8 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { txlineGet } from "@/lib/txlineServer";
 import { teamPoolFromFixtures, WORLD_CUP_COMPETITION_ID } from "@/lib/matchState";
+import { resolveFixtures } from "@/lib/fixtures";
 import { createRoom } from "@/lib/store";
-import type { FixtureRecord } from "@/lib/txlineTypes";
 
 /** POST /api/rooms — create a room. Body: { name, hostWallet, hostName, competitionId? } */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -12,9 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const comp = Number(competitionId) || WORLD_CUP_COMPETITION_ID;
   try {
-    const fixtures = (await txlineGet<FixtureRecord[]>(
-      `/api/fixtures/snapshot?competitionId=${comp}`
-    )).filter((f) => f.CompetitionId === comp);
+    const { fixtures } = await resolveFixtures(comp);
     const teamPool = teamPoolFromFixtures(fixtures);
     if (teamPool.length < 2) return res.status(400).json({ error: "no teams available for this competition" });
 

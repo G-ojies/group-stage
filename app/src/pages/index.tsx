@@ -11,7 +11,7 @@ import type { MatchState } from "@/lib/matchState";
 export default function Home() {
   const router = useRouter();
   const { publicKey } = useWallet();
-  const { matches, loading } = useLiveMatches();
+  const { matches, loading, source } = useLiveMatches();
   const liveCount = matches.filter((m) => m.inPlay).length;
 
   const [name, setName] = useState("");
@@ -76,6 +76,13 @@ export default function Home() {
 
       <section className="mx-auto mt-10 max-w-6xl px-5">
         <MatchTicker matches={matches} />
+        {source === "archive" && (
+          <p className="label mt-3 normal-case tracking-normal text-[11px] text-muted">
+            The TxLINE devnet feed has rolled past this World Cup, so its fixtures no longer
+            appear in the competition snapshot. Scores below are still pulled live from TxLINE
+            per fixture, showing the completed knockout run.
+          </p>
+        )}
       </section>
 
       <section id="play" className="mx-auto mt-14 grid max-w-6xl scroll-mt-20 gap-5 px-5 pb-24 md:grid-cols-2">
@@ -227,7 +234,10 @@ function HeroBanner({ matches, liveCount, loading }: { matches: MatchState[]; li
           <Stat label="Live now" sub={liveCount ? "in play" : "none in play"}>
             <span className={`stat ${liveCount ? "text-turf" : "text-muted/60"}`}>{loading ? "·" : liveCount}</span>
           </Stat>
-          <Stat label="Next kickoff" sub={next ? `${next.home} v ${next.away}` : "no fixtures listed"}>
+          <Stat
+            label="Next kickoff"
+            sub={next ? `${next.home} v ${next.away}` : matches.length ? "matchday complete" : "no fixtures listed"}
+          >
             <span className="stat text-chalk">{kickoff ? kickoff.split(",")[0] : "·"}</span>
           </Stat>
         </div>

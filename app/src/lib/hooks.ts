@@ -6,6 +6,7 @@ import type { Room } from "./store";
 export function useLiveMatches(competitionId = 72, intervalMs = 6000) {
   const [matches, setMatches] = useState<MatchState[]>([]);
   const [ts, setTs] = useState(0);
+  const [source, setSource] = useState<"live" | "archive">("live");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -16,6 +17,7 @@ export function useLiveMatches(competitionId = 72, intervalMs = 6000) {
       if (!r.ok) throw new Error(d.error || "failed");
       setMatches(d.matches);
       setTs(d.ts);
+      setSource(d.source === "archive" ? "archive" : "live");
       setError(null);
     } catch (e: any) {
       setError(e.message);
@@ -30,7 +32,7 @@ export function useLiveMatches(competitionId = 72, intervalMs = 6000) {
     return () => clearInterval(h);
   }, [load, intervalMs]);
 
-  return { matches, ts, error, loading, reload: load };
+  return { matches, ts, source, error, loading, reload: load };
 }
 
 /** Poll a room's state. */
